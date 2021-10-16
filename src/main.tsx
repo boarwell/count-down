@@ -3,12 +3,12 @@ import { useState, useRef, useEffect, useCallback } from "preact/hooks";
 
 type ArcProp = {
   durationMS: number;
-  ellapsedMS: number;
+  elapsedMS: number;
 };
 
-const ArcX: FunctionComponent<ArcProp> = ({ durationMS, ellapsedMS }) => {
+const ArcX: FunctionComponent<ArcProp> = ({ durationMS, elapsedMS }) => {
   const radius = 10;
-  const percentage = ellapsedMS / durationMS;
+  const percentage = elapsedMS / durationMS;
   const arcLength = 2 * Math.PI * radius * percentage;
   const theta = arcLength / radius;
   const largeArcFlag = percentage < 0.5 ? 1 : 0;
@@ -46,7 +46,7 @@ const useTimer = (option: TimerOption) => {
   const started = useRef(Date.now());
   const animationID = useRef<number | null>(null);
   const [now, setNow] = useState(Date.now());
-  const ellapsed = now - started.current;
+  const elapsed = now - started.current;
 
   const start = () => {
     setNow(Date.now());
@@ -62,7 +62,7 @@ const useTimer = (option: TimerOption) => {
     if (animationID.current !== null) {
       return;
     }
-    started.current = Date.now() - ellapsed;
+    started.current = Date.now() - elapsed;
     start();
   };
 
@@ -73,7 +73,7 @@ const useTimer = (option: TimerOption) => {
   };
 
   return {
-    ellapsed,
+    elapsed,
     start,
     stop,
     restart,
@@ -83,7 +83,7 @@ const useTimer = (option: TimerOption) => {
 
 const Arc: FunctionComponent = () => {
   const durationMS = 10_000;
-  const { ellapsed, start, stop, restart, resume } = useTimer({
+  const { elapsed, start, stop, restart, resume } = useTimer({
     durationMS,
   });
 
@@ -93,7 +93,7 @@ const Arc: FunctionComponent = () => {
 
   return (
     <div>
-      <ArcX durationMS={durationMS} ellapsedMS={ellapsed % durationMS} />
+      <ArcX durationMS={durationMS} elapsedMS={elapsed % durationMS} />
 
       <div>
         <button type="button" onClick={restart}>

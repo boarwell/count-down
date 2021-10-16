@@ -383,9 +383,9 @@
   }
 
   // src/main.tsx
-  var ArcX = ({ durationMS, ellapsedMS }) => {
+  var ArcX = ({ durationMS, elapsedMS }) => {
     const radius = 10;
-    const percentage = ellapsedMS / durationMS;
+    const percentage = elapsedMS / durationMS;
     const arcLength = 2 * Math.PI * radius * percentage;
     const theta = arcLength / radius;
     const largeArcFlag = percentage < 0.5 ? 1 : 0;
@@ -415,7 +415,7 @@
     const started = s2(Date.now());
     const animationID = s2(null);
     const [now, setNow] = l2(Date.now());
-    const ellapsed = now - started.current;
+    const elapsed = now - started.current;
     const start = () => {
       setNow(Date.now());
       animationID.current = window.requestAnimationFrame(start);
@@ -428,7 +428,7 @@
       if (animationID.current !== null) {
         return;
       }
-      started.current = Date.now() - ellapsed;
+      started.current = Date.now() - elapsed;
       start();
     };
     const restart = () => {
@@ -437,7 +437,7 @@
       start();
     };
     return {
-      ellapsed,
+      elapsed,
       start,
       stop,
       restart,
@@ -446,7 +446,7 @@
   };
   var Arc = () => {
     const durationMS = 1e4;
-    const { ellapsed, start, stop, restart, resume } = useTimer({
+    const { elapsed, start, stop, restart, resume } = useTimer({
       durationMS
     });
     y2(() => {
@@ -454,7 +454,7 @@
     }, []);
     return /* @__PURE__ */ v("div", null, /* @__PURE__ */ v(ArcX, {
       durationMS,
-      ellapsedMS: ellapsed % durationMS
+      elapsedMS: elapsed % durationMS
     }), /* @__PURE__ */ v("div", null, /* @__PURE__ */ v("button", {
       type: "button",
       onClick: restart
