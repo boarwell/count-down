@@ -1,5 +1,4 @@
 import { h, render, FunctionComponent } from "preact";
-import { useEffect } from "preact/hooks";
 
 import { Timer, useTimer } from "./timer.js";
 
@@ -10,13 +9,15 @@ const App: FunctionComponent = () => {
     onTimeIsUP: () => alert("time's up!"),
   });
 
-  useEffect(() => {
-    start();
-  }, []);
-
   return (
     <div>
       <Timer percentage={percentage} />
+
+      <div>
+        <button type="button" onClick={start}>
+          ▶️ start
+        </button>
+      </div>
 
       <div>
         <button type="button" onClick={restart}>

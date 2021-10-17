@@ -21,13 +21,23 @@ export const Timer: FunctionComponent<Prop> = ({ percentage }) => {
       xmlns="http://www.w3.org/2000/svg"
       style={{ rotate: "-90deg" }}
     >
-      <path
-        fill="none"
-        stroke={color}
-        d={`M ${radius},0 A ${radius} ${radius} 0 ${largeArcFlag} 1 ${arcX} ${arcY}`}
-        stroke-width={2}
-      />
-
+      {percentage === 0 ? (
+        <circle
+          cx="0"
+          cy="0"
+          r={radius}
+          fill="none"
+          stroke-width="2"
+          stroke={color}
+        />
+      ) : (
+        <path
+          fill="none"
+          stroke={color}
+          d={`M ${radius},0 A ${radius} ${radius} 0 ${largeArcFlag} 1 ${arcX} ${arcY}`}
+          stroke-width={2}
+        />
+      )}
       <g fill="none" stroke={color} stroke-width="2">
         <path d="M -4,-4 4,4" />
         <path d="M 4,-4 -4,4" />
@@ -53,19 +63,23 @@ export const useTimer = ({
   durationMS,
   onTimeIsUP,
 }: TimerOption): TimerHandler => {
-  const started = useRef(Date.now());
+  const started = useRef<number | null>(null);
   const animationID = useRef<number | null>(null);
-  const [now, setNow] = useState(Date.now());
-  const elapsedMS = now - started.current;
-  const percentage = elapsedMS / durationMS;
+  const [percentage, setPercentage] = useState(0);
+
   const done = percentage >= 1;
 
   const start = () => {
-    setNow(Date.now());
+    if (started.current === null) {
+      started.current = Date.now();
+    }
+
+    const elapsedMS = Date.now() - started.current;
+    setPercentage(elapsedMS / durationMS);
     animationID.current = window.requestAnimationFrame(start);
   };
 
-  const stop = () => {
+  const pause = () => {
     window.cancelAnimationFrame(animationID.current);
     animationID.current = null;
   };
@@ -74,29 +88,30 @@ export const useTimer = ({
     if (animationID.current !== null) {
       return;
     }
-    started.current = Date.now() - elapsedMS;
+    started.current = Date.now() - durationMS * percentage;
     start();
   };
 
   const restart = () => {
-    stop();
+    pause();
     started.current = Date.now();
+    setPercentage(0);
     start();
   };
 
   useEffect(() => {
     if (done) {
-      stop();
+      pause();
       onTimeIsUP();
     }
 
-    return stop;
+    return pause;
   }, [done]);
 
   return {
     percentage,
     start,
-    pause: stop,
+    pause,
     restart,
     resume,
   };
