@@ -1,5 +1,7 @@
 import { h, FunctionComponent } from "preact";
-import { useState, useRef, useEffect } from "preact/hooks";
+import { useEffect, Reducer, useReducer } from "preact/hooks";
+
+import { tickRAF } from "./util.js";
 
 type Prop = {
   percentage: number;
@@ -48,68 +50,152 @@ export const Timer: FunctionComponent<Prop> = ({ percentage }) => {
 
 type TimerOption = {
   durationMS: number;
-  onTimeIsUP: () => unknown;
+  onTimeIsUP?: () => unknown;
 };
+
+type StateLabel = "standby" | "active" | "paused" | "done";
 
 type TimerHandler = {
   percentage: number;
+  state: StateLabel;
   start: () => void;
   pause: () => void;
   restart: () => void;
   resume: () => void;
 };
 
+type State = {
+  label: StateLabel;
+  started: number | null;
+  percentage: number;
+  controller: AbortController;
+};
+
+const INITIAL_STATE: State = {
+  label: "standby",
+  started: null,
+  percentage: 0,
+  controller: new AbortController(),
+};
+
+type Action =
+  | { type: "start" }
+  | {
+      type: "tick";
+      payload: {
+        percentage: number;
+      };
+    }
+  | { type: "pause" }
+  | { type: "resume"; payload: { durationMS: number } }
+  | { type: "done" };
+
+const reducer: Reducer<State, Action> = (s, a) => {
+  switch (a.type) {
+    case "start": {
+      return {
+        ...s,
+        label: "active",
+        percentage: 0,
+        started: Date.now(),
+        controller: new AbortController(),
+      };
+    }
+
+    case "tick": {
+      if (s.label !== "active") {
+        return s;
+      }
+
+      return { ...s, percentage: a.payload.percentage };
+    }
+
+    case "pause": {
+      if (s.label !== "active") {
+        return s;
+      }
+
+      s.controller.abort();
+      return { ...s, label: "paused" };
+    }
+
+    case "resume": {
+      if (s.label !== "active") {
+        return s;
+      }
+
+      return {
+        ...s,
+        label: "active",
+        started: Date.now() - a.payload.durationMS * s.percentage,
+        controller: new AbortController(),
+      };
+    }
+
+    case "done": {
+      if (s.label !== "active") {
+        return s;
+      }
+
+      s.controller.abort();
+      return { ...s, label: "done", percentage: 1 };
+    }
+  }
+
+  return s;
+};
+
 export const useTimer = ({
   durationMS,
   onTimeIsUP,
 }: TimerOption): TimerHandler => {
-  const started = useRef<number | null>(null);
-  const animationID = useRef<number | null>(null);
-  const [percentage, setPercentage] = useState(0);
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
-  const done = percentage >= 1;
+  useEffect(() => {
+    if (state.label === "active") {
+      (async () => {
+        for await (const _ of tickRAF(state.controller)) {
+          const elapsedMS = Date.now() - state.started;
+          const percentage = Math.min(elapsedMS / durationMS, 1);
 
-  const start = () => {
-    if (started.current === null) {
-      started.current = Date.now();
+          if (percentage === 1) {
+            dispatch({ type: "done" });
+            onTimeIsUP && onTimeIsUP();
+            break;
+          }
+
+          dispatch({
+            type: "tick",
+            payload: { percentage },
+          });
+        }
+      })();
     }
 
-    const elapsedMS = Date.now() - started.current;
-    setPercentage(elapsedMS / durationMS);
-    animationID.current = window.requestAnimationFrame(start);
+    return () => {
+      state.controller.abort();
+    };
+  }, [state.label]);
+
+  const start = () => {
+    dispatch({ type: "start" });
   };
 
   const pause = () => {
-    window.cancelAnimationFrame(animationID.current);
-    animationID.current = null;
+    dispatch({ type: "pause" });
   };
 
   const resume = () => {
-    if (animationID.current !== null) {
-      return;
-    }
-    started.current = Date.now() - durationMS * percentage;
-    start();
+    dispatch({ type: "resume", payload: { durationMS } });
   };
 
   const restart = () => {
-    pause();
-    started.current = Date.now();
-    setPercentage(0);
-    start();
+    dispatch({ type: "start" });
   };
 
-  useEffect(() => {
-    if (done) {
-      pause();
-      onTimeIsUP();
-    }
-
-    return pause;
-  }, [done]);
-
   return {
-    percentage,
+    percentage: state.percentage,
+    state: state.label,
     start,
     pause,
     restart,
