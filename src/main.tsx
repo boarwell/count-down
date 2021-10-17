@@ -5,7 +5,7 @@ import { Timer, useTimer } from "./timer.js";
 
 const App: FunctionComponent = () => {
   const durationMS = 10_000;
-  const { percentage, start, stop, restart, resume } = useTimer({
+  const { percentage, start, pause, restart, resume } = useTimer({
     durationMS,
     onTimeIsUP: () => alert("time's up!"),
   });
@@ -20,19 +20,19 @@ const App: FunctionComponent = () => {
 
       <div>
         <button type="button" onClick={restart}>
-          restart
+          ↪️ restart
         </button>
       </div>
 
       <div>
-        <button type="button" onClick={stop}>
-          stop
+        <button type="button" onClick={pause}>
+          ⏸️ pause
         </button>
       </div>
 
       <div>
         <button type="button" onClick={resume}>
-          resume
+          ▶️ resume
         </button>
       </div>
     </div>

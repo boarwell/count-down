@@ -44,7 +44,7 @@ type TimerOption = {
 type TimerHandler = {
   percentage: number;
   start: () => void;
-  stop: () => void;
+  pause: () => void;
   restart: () => void;
   resume: () => void;
 };
@@ -96,7 +96,7 @@ export const useTimer = ({
   return {
     percentage,
     start,
-    stop,
+    pause: stop,
     restart,
     resume,
   };
