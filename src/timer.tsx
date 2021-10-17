@@ -120,7 +120,7 @@ const reducer: Reducer<State, Action> = (s, a) => {
     }
 
     case "resume": {
-      if (s.label !== "active") {
+      if (s.label !== "paused") {
         return s;
       }
 
