@@ -7,7 +7,7 @@ type Prop = {
   percentage: number;
 };
 
-export const Timer: FunctionComponent<Prop> = ({ percentage }) => {
+export const CountDown: FunctionComponent<Prop> = ({ percentage }) => {
   const radius = 10;
   const arcLength = 2 * Math.PI * radius * percentage;
   const theta = arcLength / radius;
@@ -48,14 +48,14 @@ export const Timer: FunctionComponent<Prop> = ({ percentage }) => {
   );
 };
 
-type TimerOption = {
+type Option = {
   durationMS: number;
   onTimeIsUP?: () => unknown;
 };
 
 type StateLabel = "standby" | "active" | "paused" | "done";
 
-type TimerHandler = {
+type Handler = {
   percentage: number;
   state: StateLabel;
   start: () => void;
@@ -145,10 +145,7 @@ const reducer: Reducer<State, Action> = (s, a) => {
   return s;
 };
 
-export const useTimer = ({
-  durationMS,
-  onTimeIsUP,
-}: TimerOption): TimerHandler => {
+export const useCountDown = ({ durationMS, onTimeIsUP }: Option): Handler => {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
   useEffect(() => {

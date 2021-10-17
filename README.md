@@ -1,4 +1,4 @@
-# timer
+# count-down
 
 Count down timer component/hook for Preact.
 

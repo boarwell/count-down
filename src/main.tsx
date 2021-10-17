@@ -1,10 +1,10 @@
 import { h, render, FunctionComponent } from "preact";
 
-import { Timer, useTimer } from "./timer.js";
+import { CountDown, useCountDown } from "./count-down.jsx";
 
 const App: FunctionComponent = () => {
   const durationMS = 3_000;
-  const { percentage, start, pause, restart, resume, state } = useTimer({
+  const { percentage, start, pause, restart, resume, state } = useCountDown({
     durationMS,
     onTimeIsUP: () => alert("time's up!"),
   });
@@ -12,7 +12,7 @@ const App: FunctionComponent = () => {
   return (
     <div>
       {state !== "done" ? (
-        <Timer percentage={percentage} />
+        <CountDown percentage={percentage} />
       ) : (
         <div style={{ width: "100%", aspectRatio: "1 / 1" }}></div>
       )}
