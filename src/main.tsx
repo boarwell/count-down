@@ -1,90 +1,13 @@
 import { h, render, FunctionComponent } from "preact";
-import { useState, useRef, useEffect, useCallback } from "preact/hooks";
+import { useEffect } from "preact/hooks";
 
-type ArcProp = {
-  durationMS: number;
-  elapsedMS: number;
-};
+import { Timer, useTimer } from "./timer.js";
 
-const ArcX: FunctionComponent<ArcProp> = ({ durationMS, elapsedMS }) => {
-  const radius = 10;
-  const percentage = elapsedMS / durationMS;
-  const arcLength = 2 * Math.PI * radius * percentage;
-  const theta = arcLength / radius;
-  const largeArcFlag = percentage < 0.5 ? 1 : 0;
-  const color = "rebeccapurple";
-
-  const arcX = Math.cos(theta) * radius;
-  const arcY = Math.sin(theta) * radius * -1;
-
-  return (
-    <svg
-      viewBox={`-11 -11 22 22`}
-      xmlns="http://www.w3.org/2000/svg"
-      style={{ rotate: "-90deg" }}
-    >
-      <path
-        fill="none"
-        stroke={color}
-        d={`M ${radius},0 A ${radius} ${radius} 0 ${largeArcFlag} 1 ${arcX} ${arcY}`}
-        stroke-width={2}
-      />
-
-      <g fill="none" stroke={color} stroke-width="2">
-        <path d="M -4,-4 4,4" />
-        <path d="M 4,-4 -4,4" />
-      </g>
-    </svg>
-  );
-};
-
-type TimerOption = {
-  durationMS: number;
-};
-
-const useTimer = (option: TimerOption) => {
-  const started = useRef(Date.now());
-  const animationID = useRef<number | null>(null);
-  const [now, setNow] = useState(Date.now());
-  const elapsed = now - started.current;
-
-  const start = () => {
-    setNow(Date.now());
-    animationID.current = window.requestAnimationFrame(start);
-  };
-
-  const stop = () => {
-    window.cancelAnimationFrame(animationID.current);
-    animationID.current = null;
-  };
-
-  const resume = () => {
-    if (animationID.current !== null) {
-      return;
-    }
-    started.current = Date.now() - elapsed;
-    start();
-  };
-
-  const restart = () => {
-    stop();
-    started.current = Date.now();
-    start();
-  };
-
-  return {
-    elapsed,
-    start,
-    stop,
-    restart,
-    resume,
-  };
-};
-
-const Arc: FunctionComponent = () => {
+const App: FunctionComponent = () => {
   const durationMS = 10_000;
-  const { elapsed, start, stop, restart, resume } = useTimer({
+  const { percentage, start, stop, restart, resume } = useTimer({
     durationMS,
+    onTimeIsUP: () => alert("time's up!"),
   });
 
   useEffect(() => {
@@ -93,7 +16,7 @@ const Arc: FunctionComponent = () => {
 
   return (
     <div>
-      <ArcX durationMS={durationMS} elapsedMS={elapsed % durationMS} />
+      <Timer percentage={percentage} />
 
       <div>
         <button type="button" onClick={restart}>
@@ -112,14 +35,6 @@ const Arc: FunctionComponent = () => {
           resume
         </button>
       </div>
-    </div>
-  );
-};
-
-const App: FunctionComponent = () => {
-  return (
-    <div>
-      <Arc />
     </div>
   );
 };
