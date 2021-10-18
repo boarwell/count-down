@@ -1,7 +1,7 @@
 import { h, FunctionComponent } from "preact";
-import { useEffect, Reducer, useReducer } from "preact/hooks";
+import { useEffect, Reducer, useReducer, useCallback } from "preact/hooks";
 
-import { tickRAF } from "./util.js";
+import { tickRAF, waitForRAF } from "./util.js";
 
 type Prop = {
   percentage: number;
@@ -157,7 +157,11 @@ export const useCountDown = ({ durationMS, onTimeIsUP }: Option): Handler => {
 
           if (percentage === 1) {
             dispatch({ type: "done" });
-            onTimeIsUP && onTimeIsUP();
+            if (onTimeIsUP !== undefined) {
+              // call after rendering "done" state
+              await waitForRAF();
+              onTimeIsUP();
+            }
             break;
           }
 
@@ -174,21 +178,21 @@ export const useCountDown = ({ durationMS, onTimeIsUP }: Option): Handler => {
     };
   }, [state.label]);
 
-  const start = () => {
+  const start = useCallback(() => {
     dispatch({ type: "start" });
-  };
+  }, [dispatch]);
 
-  const pause = () => {
+  const pause = useCallback(() => {
     dispatch({ type: "pause" });
-  };
+  }, [dispatch]);
 
-  const resume = () => {
+  const resume = useCallback(() => {
     dispatch({ type: "resume", payload: { durationMS } });
-  };
+  }, [dispatch]);
 
-  const restart = () => {
+  const restart = useCallback(() => {
     dispatch({ type: "start" });
-  };
+  }, [dispatch]);
 
   return {
     percentage: state.percentage,
