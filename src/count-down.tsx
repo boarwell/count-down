@@ -12,7 +12,7 @@ export const CountDown: FunctionComponent<Prop> = ({ percentage }) => {
   const arcLength = 2 * Math.PI * radius * percentage;
   const theta = arcLength / radius;
   const largeArcFlag = percentage < 0.5 ? 1 : 0;
-  const color = "rebeccapurple";
+  const color = "#333";
 
   const arcX = Math.cos(theta) * radius;
   const arcY = Math.sin(theta) * radius * -1;

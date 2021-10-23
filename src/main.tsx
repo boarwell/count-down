@@ -10,12 +10,10 @@ const App: FunctionComponent = () => {
   });
 
   return (
-    <div>
-      {state !== "done" ? (
-        <CountDown percentage={percentage} />
-      ) : (
-        <div style={{ width: "100%", aspectRatio: "1 / 1" }}></div>
-      )}
+    <div style={{ maxWidth: "450px", margin: "0 auto" }}>
+      <div style={{ width: "100%", aspectRatio: "1 / 1" }}>
+        {state !== "done" && <CountDown percentage={percentage} />}
+      </div>
 
       {state === "standby" && (
         <div>
