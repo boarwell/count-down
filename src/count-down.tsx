@@ -1,7 +1,7 @@
 import { h, FunctionComponent } from "preact";
-import { useEffect, Reducer, useReducer, useCallback } from "preact/hooks";
+import { useEffect, useCallback, useRef, useState } from "preact/hooks";
 
-import { tickRAF, waitForRAF } from "./util.js";
+import { tickRAF } from "./util.js";
 
 type Prop = {
   percentage: number;
@@ -64,139 +64,74 @@ type Handler = {
   resume: () => void;
 };
 
-type State = {
-  label: StateLabel;
-  started: number | null;
-  percentage: number;
-  controller: AbortController;
-};
-
-const INITIAL_STATE: State = {
-  label: "standby",
-  started: null,
-  percentage: 0,
-  controller: new AbortController(),
-};
-
-type Action =
-  | { type: "start" }
-  | {
-      type: "tick";
-      payload: {
-        percentage: number;
-      };
-    }
-  | { type: "pause" }
-  | { type: "resume"; payload: { durationMS: number } }
-  | { type: "done" };
-
-const reducer: Reducer<State, Action> = (s, a) => {
-  switch (a.type) {
-    case "start": {
-      return {
-        ...s,
-        label: "active",
-        percentage: 0,
-        started: Date.now(),
-        controller: new AbortController(),
-      };
-    }
-
-    case "tick": {
-      if (s.label !== "active") {
-        return s;
-      }
-
-      return { ...s, percentage: a.payload.percentage };
-    }
-
-    case "pause": {
-      if (s.label !== "active") {
-        return s;
-      }
-
-      s.controller.abort();
-      return { ...s, label: "paused" };
-    }
-
-    case "resume": {
-      if (s.label !== "paused") {
-        return s;
-      }
-
-      return {
-        ...s,
-        label: "active",
-        started: Date.now() - a.payload.durationMS * s.percentage,
-        controller: new AbortController(),
-      };
-    }
-
-    case "done": {
-      if (s.label !== "active") {
-        return s;
-      }
-
-      s.controller.abort();
-      return { ...s, label: "done", percentage: 1 };
-    }
-  }
-
-  return s;
-};
-
 export const useCountDown = ({ durationMS, onTimeIsUP }: Option): Handler => {
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
+  const [label, setLabel] = useState<StateLabel>("standby");
+  const [percentage, setPercentage] = useState<number>(0);
+
+  const started = useRef<number | null>(null);
+  const controller = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    if (state.label === "active") {
-      (async () => {
-        for await (const _ of tickRAF(state.controller)) {
-          const elapsedMS = Date.now() - state.started;
-          const percentage = Math.min(elapsedMS / durationMS, 1);
-
-          if (percentage === 1) {
-            dispatch({ type: "done" });
-            if (onTimeIsUP !== undefined) {
-              // call after rendering "done" state
-              await waitForRAF();
-              onTimeIsUP();
-            }
-            break;
-          }
-
-          dispatch({
-            type: "tick",
-            payload: { percentage },
-          });
-        }
-      })();
+    if (label !== "active") {
+      return;
     }
 
+    (async () => {
+      for await (const _ of tickRAF(controller.current)) {
+        const elapsedMS = Date.now() - started.current;
+        const p = Math.min(elapsedMS / durationMS, 1);
+        setPercentage(p);
+
+        if (p < 1) {
+          continue;
+        }
+
+        setLabel("done");
+        controller.current.abort();
+      }
+    })();
+
     return () => {
-      state.controller.abort();
+      controller.current?.abort();
     };
-  }, [state.label]);
+  }, [label, controller.current, started.current]);
+
+  useEffect(() => {
+    if (label !== "done" || onTimeIsUP === undefined) {
+      return;
+    }
+
+    onTimeIsUP();
+  }, [label, onTimeIsUP]);
 
   const start = useCallback(() => {
-    dispatch({ type: "start" });
-  }, [dispatch]);
+    started.current = Date.now();
+    controller.current = new AbortController();
+    setPercentage(0);
+    setLabel("active");
+  }, []);
 
   const pause = useCallback(() => {
-    dispatch({ type: "pause" });
-  }, [dispatch]);
+    setLabel("paused");
+    controller.current?.abort();
+  }, [controller.current]);
 
   const resume = useCallback(() => {
-    dispatch({ type: "resume", payload: { durationMS } });
-  }, [dispatch]);
+    started.current = Date.now() - percentage * durationMS;
+    controller.current = new AbortController();
+    setLabel("active");
+  }, [percentage, durationMS]);
 
   const restart = useCallback(() => {
-    dispatch({ type: "start" });
-  }, [dispatch]);
+    started.current = Date.now();
+    controller.current = new AbortController();
+    setLabel("active");
+    setPercentage(0);
+  }, []);
 
   return {
-    percentage: state.percentage,
-    state: state.label,
+    percentage: percentage,
+    state: label,
     start,
     pause,
     restart,
