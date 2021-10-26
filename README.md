@@ -2,6 +2,11 @@
 
 Count down timer component/hook for Preact.
 
+<details>
+  <summary open></summary>
+  <img src="./assets/demo.webp" width="412" height="497">)
+</details>
+
 [Demo ➡️](https://boarwell.github.io/count-down/build/)
 
 ## State Overview
