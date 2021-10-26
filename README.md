@@ -2,8 +2,8 @@
 
 Count down timer component/hook for Preact.
 
-<details>
-  <summary open></summary>
+<details open>
+  <summary>📺</summary>
   <img src="./assets/demo.webp" width="412" height="497">)
 </details>
 
